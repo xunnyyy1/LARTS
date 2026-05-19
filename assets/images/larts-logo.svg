@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="LARTS Logo">
+  <defs>
+    <linearGradient id="lartsGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a56db"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="24" fill="url(#lartsGradient)"/>
+  <path d="M36 36h18a12 12 0 1 1 0 24H36v24" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M60 36l16 48" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M92 36v48" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,25 @@
+# Dependency directories
+vendor/
+node_modules/
+
+# Environment files
+.env
+
+# Composer
+composer.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+tmp/
+uploads/
+
+# PHPStorm
+.idea/
