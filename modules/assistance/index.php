@@ -1,9 +1,11 @@
 <?php
-$pageTitle = 'Assistance Distribution';
-require_once __DIR__ . '/../../includes/header.php';
+// 1. Load core configuration and authentication first
+require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/auth.php';
 
 $db = getDB();
 
+// 2. Process form submissions (Save Assistance)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isStaff()) {
     $hhId   = (int)$_POST['household_id'];
     $type   = trim($_POST['assistance_type'] ?? '');
@@ -18,23 +20,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isStaff()) {
     } else {
         setFlash('danger','Please complete all required fields.');
     }
-    header('Location: index.php'); exit;
+    header('Location: index.php'); 
+    exit;
 }
 
+// 3. Process deletions
 if (isset($_GET['del']) && isAdmin()) {
     $db->prepare('DELETE FROM assistance_records WHERE id=?')->execute([(int)$_GET['del']]);
     setFlash('success','Deleted.');
-    header('Location: index.php'); exit;
+    header('Location: index.php'); 
+    exit;
 }
 
+// 4. NOW include the HTML header
+$pageTitle = 'Assistance Distribution';
+require_once __DIR__ . '/../../includes/header.php';
+
+// 5. Fetch Data with SEARCH, FILTER, and SORT
 $search = trim($_GET['search'] ?? '');
+$filterType = trim($_GET['filter_type'] ?? '');
+$sort = $_GET['sort'] ?? 'date_released';
+$order = strtoupper($_GET['order'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
+
+// Map safe column names to prevent SQL injection in ORDER BY
+$allowedSorts = [
+    'date_released' => 'a.date_released',
+    'amount' => 'a.amount',
+    'family_name' => 'h.family_name'
+];
+$orderBy = $allowedSorts[$sort] ?? 'a.date_released';
+
 $sql = "SELECT a.*, h.family_name, h.barangay, u.name as staff_name
         FROM assistance_records a JOIN households h ON a.household_id=h.id
-        LEFT JOIN users u ON a.staff_id=u.id";
+        LEFT JOIN users u ON a.staff_id=u.id
+        WHERE 1=1"; 
 $params = [];
-if ($search) { $sql .= " WHERE h.family_name LIKE ? OR a.assistance_type LIKE ?"; $params=["%$search%","%$search%"]; }
-$sql .= " ORDER BY a.date_released DESC LIMIT 100";
-$stmt = $db->prepare($sql); $stmt->execute($params); $rows = $stmt->fetchAll();
+
+if ($search) { 
+    $sql .= " AND (h.family_name LIKE ? OR a.assistance_type LIKE ?)"; 
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+}
+
+if ($filterType) {
+    $sql .= " AND a.assistance_type = ?";
+    $params[] = $filterType;
+}
+
+$sql .= " ORDER BY $orderBy $order LIMIT 100";
+$stmt = $db->prepare($sql); 
+$stmt->execute($params); 
+$rows = $stmt->fetchAll();
+
 $households = $db->query('SELECT id,family_name,barangay FROM households ORDER BY family_name')->fetchAll();
 $assistTypes = ['4Ps Cash Grant','Food Pack','Educational Assistance','Livelihood Starter Kit','Medical Assistance','Housing Assistance','Other'];
 
@@ -53,7 +90,6 @@ $totalGiven  = array_sum(array_column($rows,'amount'));
     <?php endif; ?>
 </div>
 
-<!-- Summary -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="stat-card">
@@ -80,10 +116,31 @@ $totalGiven  = array_sum(array_column($rows,'amount'));
 
 <div class="card mb-0" style="border-bottom:0;border-radius:var(--radius) var(--radius) 0 0;">
     <div class="toolbar">
-        <form method="GET" class="d-flex gap-2">
-            <input type="text" name="search" class="form-control" style="max-width:240px;" placeholder="Search…" value="<?= clean($search) ?>">
-            <button class="btn btn-primary"><i class="bi bi-search"></i></button>
-            <?php if($search):?><a href="?" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a><?php endif;?>
+        <form method="GET" class="d-flex flex-wrap gap-2 align-items-center w-100">
+            <input type="text" name="search" class="form-control" style="max-width:200px;" placeholder="Search…" value="<?= clean($search) ?>">
+            
+            <select name="filter_type" class="form-select" style="max-width:200px;">
+                <option value="">All Assistance Types</option>
+                <?php foreach ($assistTypes as $t): ?>
+                    <option value="<?= $t ?>" <?= $filterType === $t ? 'selected' : '' ?>><?= $t ?></option>
+                <?php endforeach; ?>
+            </select>
+
+            <select name="sort" class="form-select" style="max-width:160px;">
+                <option value="date_released" <?= $sort === 'date_released' ? 'selected' : '' ?>>Sort by Date</option>
+                <option value="amount" <?= $sort === 'amount' ? 'selected' : '' ?>>Sort by Amount</option>
+                <option value="family_name" <?= $sort === 'family_name' ? 'selected' : '' ?>>Sort by Household</option>
+            </select>
+
+            <select name="order" class="form-select" style="max-width:120px;">
+                <option value="DESC" <?= $order === 'DESC' ? 'selected' : '' ?>>Desc</option>
+                <option value="ASC" <?= $order === 'ASC' ? 'selected' : '' ?>>Asc</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary"><i class="bi bi-filter"></i> Apply</button>
+            <?php if($search || $filterType || $sort !== 'date_released' || $order !== 'DESC'): ?>
+                <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-x"></i> Clear</a>
+            <?php endif;?>
         </form>
     </div>
 </div>

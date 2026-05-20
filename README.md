@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # LARTS – Livelihood Assistance & Resource Tracking System
 ### Davao Del Norte State College | IT223 Project
 **Proponents:** Dela Cruz, Justine Rey C. | Morales, Denniel Josef T. | Saldaña, Lord Blasphemyr L.
@@ -120,3 +121,6 @@ This system directly supports **SDG 1: No Poverty** by:
 
 ---
 *Submitted to: Eduardo Catoc Jr. | April 2026*
+=======
+# LARTS
+>>>>>>> f31e0e3c668f555968c3eb9efdada6412559241e
